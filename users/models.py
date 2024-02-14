@@ -2,7 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from users.servises import NULLABLE
+from django.utils.translation import gettext_lazy as _
 
+
+class UserRoles(models.TextChoices):
+    ADMIN = 'admin', _('admin')
+    EDITOR = 'editor', _('editor')
+    MEMBER = 'member', _('member')
 
 class User(AbstractUser):
     username = None
@@ -14,6 +20,7 @@ class User(AbstractUser):
     city = models.CharField(max_length=50, verbose_name='Город')
     country = models.CharField(max_length=50, verbose_name='Страна')
     avatar = models.ImageField(upload_to='users/', verbose_name='Аватар', **NULLABLE)
+    role = models.CharField(default=UserRoles.MEMBER, choices=UserRoles.choices, verbose_name='Роль пользователя')
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
