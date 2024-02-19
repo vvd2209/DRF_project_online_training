@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 import education
 from education.models import Lesson, Course, Payment
@@ -11,38 +11,48 @@ from education.serializers import CourseSerializer, LessonSerializer, PaymentSer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
+    """ Контроллер для курса """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]
+    perms_methods = {
+        'list': [IsAuthenticated, IsModerator | IsAdminUser],
+        'retrieve': [IsAuthenticated, IsOwner | IsModerator | IsAdminUser],
+        'create': [IsAuthenticated, ~IsModerator],
+        'update': [IsAuthenticated, IsOwner | IsModerator],
+        'partial_update': [IsAuthenticated, IsOwner | IsModerator],
+        'destroy': [IsAuthenticated, IsOwner | IsAdminUser],
+    }
 
     def get_permissions(self):
-        if self.action == 'create':
-            permission_classes = [AllowAny]
-        elif self.action == 'list' or self.action == 'retrieve':
-            permission_classes = [AllowAny]
-        elif self.action == 'update' or self.action == 'destroy':
-            permission_classes = [AllowAny]
-        return [permission() for permission in permission_classes]
+        self.permission_classes = self.perms_methods.get(self.action, self.permission_classes)
+        return [permission() for permission in self.permission_classes]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
     """ Создание урока """
+    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, ~IsModerator]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class LessonListAPIView(generics.ListAPIView):
     """ Просмотр списка всех уроков """
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsModerator | IsAdminUser]
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     """ Просмотр урока """
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsOwner | IsModerator | IsAdminUser]
 
     def perform_create(self, serializer):
         new_lesson = serializer.save()
@@ -55,13 +65,13 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     """ Изменение урока """
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [AllowAny, IsModerator | IsOwner]
+    permission_classes = [IsModerator | IsOwner]
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
     """ Удаление урока """
     queryset = Lesson.objects.all()
-    permission_classes = [AllowAny, IsOwner]
+    permission_classes = [IsOwner | IsAdminUser]
 
 
 class PaymentListAPIView(generics.ListAPIView):
