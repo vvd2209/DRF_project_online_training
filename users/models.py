@@ -10,6 +10,7 @@ class UserRoles(models.TextChoices):
     EDITOR = 'editor', _('editor')
     MEMBER = 'member', _('member')
 
+
 class User(AbstractUser):
     username = None
 
@@ -43,7 +44,7 @@ class Subscription(models.Model):
         return f'{self.course} {self.user}'
 
     def save(self, *args, **kwargs):
-        self.course_name = self.course.title
+        self.course_name = self.course.name
 
         return super(Subscription, self).save(*args, **kwargs)
 

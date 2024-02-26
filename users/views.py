@@ -1,13 +1,14 @@
 from rest_framework import generics, viewsets, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+from rest_framework.generics import CreateAPIView, DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from education.models import Payment
-from education.permissions import IsSelfUser
-from users.models import User
-from users.serializers import PaymentSerializer, UserSerializer
+from education.permissions import IsSelfUser, IsModerator
+from users.models import User, Subscription
+from users.serializers import PaymentSerializer, UserSerializer, SubscriptionSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -52,9 +53,35 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class PaymentListView(generics.ListAPIView):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filterset_fields = ('lesson', 'course')
-    ordering_fields = ('payment_date',)
+class SubscriptionCreateAPIView(CreateAPIView):
+    """ Класс для создания подписки """
+
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        new_subscription = serializer.save()
+        new_subscription.user = self.request.user
+        new_subscription.save()
+
+
+class SubscriptionListAPIView(generics.ListAPIView):
+    """ Класс для вывода списка подписок """
+
+    serializer_class = SubscriptionSerializer
+    queryset = Subscription.objects.all()
+    permission_classes = [AllowAny]
+
+
+class SubscriptionUpdateAPIView(generics.UpdateAPIView):
+    """ Класс для изменения подписки """
+
+    serializer_class = SubscriptionSerializer
+    queryset = Subscription.objects.all()
+    permission_classes = [IsAuthenticated, IsModerator]
+
+
+class SubscriptionDestroyAPIView(DestroyAPIView):
+    """ Класс для удаления подписки """
+
+    queryset = Subscription.objects.all()

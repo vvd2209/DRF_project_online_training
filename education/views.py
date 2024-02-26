@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 import education
 from education.models import Lesson, Course, Payment
+from education.paginators import ListPaginator
 from education.permissions import IsModerator, IsOwner
 from education.serializers import CourseSerializer, LessonSerializer, PaymentSerializer
 
@@ -22,6 +23,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         'partial_update': [IsAuthenticated, IsOwner | IsModerator],
         'destroy': [IsAuthenticated, IsOwner | IsAdminUser],
     }
+    pagination_class = ListPaginator
 
     def get_permissions(self):
         self.permission_classes = self.perms_methods.get(self.action, self.permission_classes)
@@ -46,6 +48,7 @@ class LessonListAPIView(generics.ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModerator | IsAdminUser]
+    pagination_class = ListPaginator
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
@@ -81,3 +84,4 @@ class PaymentListAPIView(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = ('course', 'lesson')
     ordering_fields = ('payment_date',)
+    pagination_class = ListPaginator

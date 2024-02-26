@@ -1,15 +1,20 @@
 from rest_framework import serializers
 from education.models import Course, Lesson, Payment
+from education.validators import URLValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = '__all__'
+        fields = ('id', 'name', 'description', 'video',)
+
+        validators = [
+            URLValidator(field_name='video'),
+        ]
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    lesson_count = serializers.SerializerMethodField()
+    lesson_count = serializers.SerializerMethodField(read_only=True)
     lessons = LessonSerializer(read_only=True, many=True)
 
     def get_lesson_count(self, obj):
