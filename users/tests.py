@@ -11,9 +11,10 @@ class SubscriptionTestCase(APITestCase):
         """
         Создание тестового пользователя
         """
-        self.user = User.objects.create(email='test@test.test', is_active=True, is_superuser=True)
+        self.user = User.objects.create(email='test@test.test', is_active=True, is_superuser=True, is_staff=True,)
         self.user.set_password('test_password')
         self.user.save()
+        self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         self.course = Course.objects.create(name='Тестовый курс')
         self.lesson = Lesson.objects.create(
@@ -53,4 +54,3 @@ class SubscriptionTestCase(APITestCase):
         )
         response = self.client.delete(reverse('users:subscription_delete', args=[self.subscription.id]))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-

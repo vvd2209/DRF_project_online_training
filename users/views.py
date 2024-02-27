@@ -5,7 +5,7 @@ from rest_framework.generics import CreateAPIView, DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from education.models import Payment
+from education.models import Payment, Course
 from education.permissions import IsSelfUser, IsModerator
 from users.models import User, Subscription
 from users.serializers import PaymentSerializer, UserSerializer, SubscriptionSerializer
@@ -80,8 +80,34 @@ class SubscriptionUpdateAPIView(generics.UpdateAPIView):
     queryset = Subscription.objects.all()
     permission_classes = [IsAuthenticated, IsModerator]
 
+    def post(self, *args, **kwargs):
+        course = Course.objects.get(pk=self.kwargs['pk'])
+        user = self.request.user
+        subscription = Subscription.objects.filter(course=course, user=user).first()
+
+        if subscription.is_subscribed:
+            subscription.is_subscribed = True
+            subscription.save()
+            message = 'Вы подписались на курс.'
+
+        return Response({"detail": message})
+
 
 class SubscriptionDestroyAPIView(DestroyAPIView):
     """ Класс для удаления подписки """
 
+    serializer_class = SubscriptionSerializer
     queryset = Subscription.objects.all()
+    permission_classes = [IsAuthenticated, IsModerator]
+
+    def post(self, *args, **kwargs):
+        course = Course.objects.get(pk=self.kwargs['pk'])
+        user = self.request.user
+        subscription = Subscription.objects.filter(course=course, user=user).first()
+
+        if subscription.is_subscribed:
+            subscription.is_subscribed = False
+            subscription.save()
+            message = 'Вы отписались от курса.'
+
+        return Response({"detail": message})
