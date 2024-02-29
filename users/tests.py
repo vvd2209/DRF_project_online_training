@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -23,10 +24,6 @@ class SubscriptionTestCase(APITestCase):
             course=self.course,
             owner=self.user,
         )
-        self.subscription = Subscription.objects.create(
-            user=self.user,
-            course=self.course,
-        )
 
     def test_subscription_create(self):
         """
@@ -48,9 +45,14 @@ class SubscriptionTestCase(APITestCase):
         """
         Тест на удаление подписки
         """
-        self.subscription = Subscription.objects.create(
+        moderator_group, created = Group.objects.get_or_create(name='MODERATOR')
+
+        self.user.groups.add(moderator_group)  # Устанавливаем пользователя как модератора
+        self.user.save()
+
+        subscription = Subscription.objects.create(
             user=self.user,
             course=self.course,
         )
-        response = self.client.delete(reverse('users:subscription_delete', args=[self.subscription.id]))
+        response = self.client.delete(reverse('users:subscription_delete', args=[subscription.id]))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
