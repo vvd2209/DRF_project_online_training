@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 
+import os
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -152,20 +156,6 @@ REST_FRAMEWORK = {
     ]
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-}
-
-CORS_ALLOWED_ORIGINS = [
-    "https://read-only.example.com",
-    "https://read-and-write.example.com",
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://read-and-write.example.com",
-]
-
 # URL-адрес брокера сообщений
 CELERY_BROKER_URL = 'redis://redis:6379/0'  # Например, Redis, который по умолчанию работает на порту 6379
 
@@ -180,3 +170,20 @@ CELERY_TASK_TRACK_STARTED = True
 
 # Максимальное время на выполнение задачи
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_PORT = 2525
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+CACHE_ENABLED = os.getenv('CACHE_ENABLED') == '1'
+
+if CACHE_ENABLED:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv('CACHE_LOCATION'),
+        }
+    }

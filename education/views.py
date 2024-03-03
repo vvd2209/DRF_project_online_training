@@ -1,11 +1,10 @@
-from django.core.mail import send_mail
 from django.shortcuts import render
 from rest_framework import viewsets, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
-import education
+from education.tasks import check_update_course
 from education.models import Lesson, Course, Payment
 from education.paginators import ListPaginator
 from education.permissions import IsModerator, IsOwner
@@ -40,12 +39,6 @@ class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, ~IsModerator]
 
-    def perform_create(self, serializer):
-        new_lesson = serializer.save()
-        new_lesson.owner = self.request.user
-        new_lesson.save()
-        education.send_mail.delay(new_lesson.course_id)
-
 
 class LessonListAPIView(generics.ListAPIView):
     """ Просмотр списка всех уроков """
@@ -67,6 +60,11 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsModerator | IsOwner]
+
+    def perform_update(self, serializer):
+        course_update = serializer.save()
+        if course_update:
+            check_update_course.delay(course_update.course_id)
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
