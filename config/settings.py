@@ -157,7 +157,7 @@ REST_FRAMEWORK = {
 }
 
 # URL-адрес брокера сообщений
-CELERY_BROKER_URL = 'redis://redis:6379/0'  # Например, Redis, который по умолчанию работает на порту 6379
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'  # Например, Redis, который по умолчанию работает на порту 6379
 
 # URL-адрес брокера результатов, также Redis
 CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
@@ -170,6 +170,13 @@ CELERY_TASK_TRACK_STARTED = True
 
 # Максимальное время на выполнение задачи
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULE = {
+    'task-name': {
+        'task': 'education.tasks.check_user_last_login',
+        'schedule': timedelta(days=1),
+    },
+}
 
 EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
