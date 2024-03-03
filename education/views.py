@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.shortcuts import render
 from rest_framework import viewsets, generics
 from django_filters.rest_framework import DjangoFilterBackend
@@ -40,7 +41,10 @@ class LessonCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, ~IsModerator]
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        new_lesson = serializer.save()
+        new_lesson.owner = self.request.user
+        new_lesson.save()
+        education.send_mail.delay(new_lesson.course_id)
 
 
 class LessonListAPIView(generics.ListAPIView):
@@ -56,12 +60,6 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwner | IsModerator | IsAdminUser]
-
-    def perform_create(self, serializer):
-        new_lesson = serializer.save()
-        new_lesson.owner = self.request.user
-        new_lesson.save()
-        education.send_mail.delay(new_lesson.course_id)
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
