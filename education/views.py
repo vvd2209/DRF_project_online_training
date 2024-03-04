@@ -32,6 +32,11 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def perform_update(self, serializer):
+        course_update = serializer.save()
+        if course_update:
+            check_update_course.delay(course_update.course_id)
+
 
 class LessonCreateAPIView(generics.CreateAPIView):
     """ Создание урока """
@@ -60,11 +65,6 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsModerator | IsOwner]
-
-    def perform_update(self, serializer):
-        course_update = serializer.save()
-        if course_update:
-            check_update_course.delay(course_update.course_id)
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):

@@ -6,12 +6,12 @@ from users.models import Subscription
 
 
 @shared_task
-def check_update_course(course_id):
+def check_update_course(pk):
     """
     Уведомление подписчиков об изменениях в курсе
     """
-    course = Course.objects.get(pk=course_id)
-    subscriptions = Subscription.objects.filter(course=course_id)
+    course = Course.objects.get(pk=pk)
+    subscriptions = Subscription.objects.filter(course=pk)
 
     if subscriptions:
         for subscription in subscriptions:
