@@ -1,8 +1,7 @@
-from django.shortcuts import render
 from rest_framework import viewsets, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from education.tasks import check_update_course
 from education.models import Lesson, Course, Payment
