@@ -11,7 +11,7 @@ def check_update_course(pk):
     Уведомление подписчиков об изменениях в курсе
     """
     course = Course.objects.get(pk=pk)
-    subscriptions = Subscription.objects.filter(course=pk)
+    subscriptions = Subscription.objects.filter(course=course)
 
     if subscriptions:
         for subscription in subscriptions:
