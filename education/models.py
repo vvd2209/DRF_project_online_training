@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from education.services import create_checkout_session
 from users.models import User
 from users.servises import NULLABLE
 
@@ -55,6 +56,14 @@ class Payment(models.Model):
     pay_type = models.CharField(choices=PAY_TYPES, default=PAY_CASH, max_length=100, verbose_name='Способ оплаты')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name='Владелец платежа',
                               **NULLABLE)
+    product_id = models.CharField(max_length=50, blank=True, null=True)
+    price_id = models.CharField(max_length=50, blank=True, null=True)
+
+    def create_checkout_session(self, success_url, cancel_url):
+        """Создать сессию для платежа."""
+        if not self.product_id or not self.price_id:
+            return None
+        return create_checkout_session(self.price_id, success_url, cancel_url)
 
     def __str__(self):
         if self.payment_date:

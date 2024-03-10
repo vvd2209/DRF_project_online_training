@@ -8,6 +8,7 @@ app_name = EducationConfig.name
 
 router = routers.SimpleRouter()
 router.register('course', CourseViewSet)
+router.register('payment', PaymentViewSet)
 
 urlpatterns = [
     path('lesson/', LessonListAPIView.as_view(), name='lesson_list'),
@@ -15,7 +16,5 @@ urlpatterns = [
     path('lesson/create/', LessonCreateAPIView.as_view(), name='lesson_create'),
     path('lesson/update/<int:pk>/', LessonUpdateAPIView.as_view(), name='lesson_update'),
     path('lesson/delete/<int:pk>/', LessonDestroyAPIView.as_view(), name='lesson_delete'),
-    path('payment/', PaymentListAPIView.as_view(), name='payment_list'),
     path("payment/create/", PaymentCreateAPIView.as_view(), name="payment_create"),
-    path("payment/<int:pk>/", PaymentRetrieveAPIView.as_view(), name="payment_retrieve"),
 ] + router.urls

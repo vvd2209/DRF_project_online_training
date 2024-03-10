@@ -1,11 +1,13 @@
-import os
-import stripe
 from requests import Response
+from django.db.models.functions import datetime
+from django.utils import timezone
 from rest_framework import viewsets, generics, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.views import APIView
 
+from education.services import create_product, create_price
 from education.tasks import check_update_course
 from education.models import Lesson, Course, Payment
 from education.paginators import ListPaginator
@@ -75,48 +77,57 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     permission_classes = [IsOwner | IsAdminUser]
 
 
-class PaymentListAPIView(generics.ListAPIView):
-    """ Список платежей """
+class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filterset_fields = ('course', 'lesson')
-    ordering_fields = ('payment_date',)
-    pagination_class = ListPaginator
-
-
-class PaymentRetrieveAPIView(generics.RetrieveAPIView):
-    serializer_class = PaymentSerializer
-    queryset = Payment.objects.all()
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['course', 'lesson', 'pay_type']
+    ordering_fields = ['payment_date']
     permission_classes = [IsAuthenticated]
 
 
-class PaymentCreateAPIView(generics.CreateAPIView):
+class PaymentCreateAPIView(APIView):
     serializer_class = PaymentCreateSerializer
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated]
+    def post(self, request, format=None):
+        # Получаем данные о платеже из запроса
+        user = request.user
+        amount = request.data.get('amount')
+        pay_type = request.data.get('pay_type')
 
-    def create(self, request, *args, **kwargs):
+        # Создаем продукт в Stripe
+        product_id = create_product("Course Subscription", "Subscription to course")
 
-        stripe.api_key = os.getenv("STRIPE_API_KEY")
-        course_id = request.data.get("course")
+        # Создаем цену в Stripe
+        price_id = create_price(product_id, amount, 'RUB')
 
-        user = self.request.user
-        data = {"user": user.id, "course": course_id, "is_confirmed": True}
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
+        # Установка текущей даты и времени для поля payment_date
+        payment_date = timezone.now()
 
-        response = stripe.PaymentIntent.create(
-            amount=2000,
-            currency="usd",
-            automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
-        )
+        # Создаем запись о платеже в нашей системе
+        payment = Payment.objects.create(user=user, amount=amount, pay_type=pay_type,
+                                          product_id=product_id, price_id=price_id, payment_date=payment_date)
 
-        stripe.PaymentIntent.confirm(
-            response.id,
-            payment_method="pm_card_visa",
-        )
+        # Создаем сессию для платежа в Stripe
+        success_url = "http://example.com/success"  # Замените на ваш URL успешного платежа
+        cancel_url = "http://example.com/cancel"  # Замените на ваш URL отмены платежа
+        session_url = payment.create_checkout_session(success_url, cancel_url)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        if session_url:
+            # Если сессия создана успешно, возвращаем URL для оплаты
+            return Response({'session_url': session_url}, status=status.HTTP_201_CREATED)
+        else:
+            # Если возникла ошибка при создании сессии, возвращаем соответствующий ответ
+            return Response({'error': 'Failed to create checkout session'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentStatusAPIView(APIView):
+    def get(self, request, pk, format=None):
+        # Получаем запись о платеже по его идентификатору
+        payment = Payment.objects.get(pk=pk)
+
+        # Получаем данные о статусе платежа из Stripe
+        # В этом месте мы можем добавить логику для проверки статуса платежа в Stripe
+        # Возвращаем данные о статусе платежа в ответе
+        return Response({'status': 'Payment status goes here'}, status=status.HTTP_200_OK)
