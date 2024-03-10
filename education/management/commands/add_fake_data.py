@@ -65,4 +65,3 @@ class Command(BaseCommand):
                 pay_type=pay_type,
             )
             payments.append(payment)
-            print(payment)
