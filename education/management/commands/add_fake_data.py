@@ -50,8 +50,8 @@ class Command(BaseCommand):
         for _ in range(12):
             owner = random.choice(users)
             payment_date = fake.date_between(start_date='-60d', end_date='today')
-            amount = Decimal(random.uniform(100, 1000))
-            pay_type = random.choice(['cash', 'transfer'])
+            amount = int(Decimal(random.uniform(100, 1000)))
+            pay_type = random.choice(['PAY_CASH', 'PAY_CARD'])
 
             is_course = random.choice([True, False])
             course_lesson = random.choice(courses) if is_course else random.choice(lessons)
