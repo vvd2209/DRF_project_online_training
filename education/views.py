@@ -1,4 +1,7 @@
-from rest_framework import viewsets, generics
+import os
+import stripe
+from requests import Response
+from rest_framework import viewsets, generics, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -7,7 +10,7 @@ from education.tasks import check_update_course
 from education.models import Lesson, Course, Payment
 from education.paginators import ListPaginator
 from education.permissions import IsModerator, IsOwner
-from education.serializers import CourseSerializer, LessonSerializer, PaymentSerializer
+from education.serializers import CourseSerializer, LessonSerializer, PaymentSerializer, PaymentCreateSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -80,3 +83,40 @@ class PaymentListAPIView(generics.ListAPIView):
     filterset_fields = ('course', 'lesson')
     ordering_fields = ('payment_date',)
     pagination_class = ListPaginator
+
+
+class PaymentRetrieveAPIView(generics.RetrieveAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class PaymentCreateAPIView(generics.CreateAPIView):
+    serializer_class = PaymentCreateSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+
+        stripe.api_key = os.getenv("STRIPE_API_KEY")
+        course_id = request.data.get("course")
+
+        user = self.request.user
+        data = {"user": user.id, "course": course_id, "is_confirmed": True}
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        response = stripe.PaymentIntent.create(
+            amount=2000,
+            currency="usd",
+            automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
+        )
+
+        stripe.PaymentIntent.confirm(
+            response.id,
+            payment_method="pm_card_visa",
+        )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
