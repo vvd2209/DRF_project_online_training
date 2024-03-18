@@ -91,11 +91,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'online_training',
+        'NAME': 'postgres',
         'USER': 'postgres',
         'PORT': '5432',
-        'HOST': 'localhost',
-        'PASSWORD': '1234'
+        'HOST': 'db',
+        'PASSWORD': 'mysecretpassword'
     }
 }
 
