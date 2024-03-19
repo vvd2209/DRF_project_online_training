@@ -24,7 +24,7 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g+pa%gck0%%tr239o@r5xv#emf--!ych7s15)exlwf%esoark)'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -95,7 +95,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PORT': '5432',
         'HOST': 'db',
-        'PASSWORD': 'mysecretpassword'
+        'PASSWORD': os.getenv('DB_PASSWORD')
     }
 }
 
