@@ -98,4 +98,8 @@ DRF_project + Docker
 Дописаны в docker-compose.yaml работу с Celery.
 Команды
 Собрать образ командой docker-compose build
+<<<<<<< HEAD
 Запустить контейнеры командой docker-compose up
+=======
+Запустить контейнеры командой docker-compose up
+>>>>>>> origin/main
